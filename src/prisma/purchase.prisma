@@ -1,4 +1,0 @@
-model purchase {
-    id String @default(uuid()) @id
-
-}
