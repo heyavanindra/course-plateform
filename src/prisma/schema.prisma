@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum productStatus {
+  public
+  private
+}
+
+enum courseStatus {
+  public
+  private
+}
+
+enum lessonStatus {
+  private
+  public
+  preview
+}
+
+enum role {
+  admin
+  user
+}
+
+model users {
+  id                      String                    @id @default(uuid())
+  clerkUserId             String                    @unique
+  email                   String
+  name                    String
+  role                    role                      @default(user)
+  imageUrl                String
+  deletedAt               DateTime                  @db.Timestamptz(3)
+  createdAt               DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                  @updatedAt @db.Timestamptz(3)
+  userCourseAccess        userCourseAccess[]
+  purchase                purchase[]
+  userLessonCompleteTable userLessonCompleteTable[]
+}
+
+model userCourseAccess {
+  userId    String   @default(uuid())
+  courseId  String   @default(uuid())
+  course    courses  @relation(fields: [courseId], references: [id])
+  users     users    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@id([userId, courseId])
+}
+
+model courses {
+  id                  String                @id @default(uuid())
+  name                String
+  description         String
+  createdAt           DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime              @updatedAt @db.Timestamptz(3)
+  coursesProductTable coursesProductTable[]
+  courseSections      courseSections[]
+  userCourseAccess    userCourseAccess[]
+}
+
+model product {
+  id                  String                @id @default(uuid())
+  name                String
+  description         String
+  imageurl            String
+  priceIndollers      Int
+  status              productStatus         @default(private)
+  createdAt           DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime              @updatedAt @db.Timestamptz(3)
+  coursesProductTable coursesProductTable[]
+  purchase            purchase[]
+}
+
+model coursesProductTable {
+  product   product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  course    courses  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  courseId  String
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@id([productId, courseId])
+}
+
+model courseSections {
+  id        String        @id @default(uuid())
+  name      String
+  status    productStatus @default(private)
+  order     Int
+  courseId  String        @default(uuid())
+  course    courses       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @db.Timestamptz(3)
+  lesson    lesson[]
+}
+
+model lesson {
+  id                      String                    @id @default(uuid())
+  name                    String
+  description             String
+  youtubeVideoId          String
+  order                   Int
+  status                  lessonStatus              @default(private)
+  courseSection           courseSections            @relation(fields: [sectionId], references: [id])
+  sectionId               String                    @default(uuid())
+  createdAt               DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                  @updatedAt @db.Timestamptz(3)
+  userLessonCompleteTable userLessonCompleteTable[]
+}
+
+model purchase {
+  id                String   @id @default(uuid())
+  pricePaidInRuppes Int
+  productDetails    Json
+  user              users    @relation(fields: [userId], references: [id])
+  userId            String   @default(uuid())
+  product           product  @relation(fields: [productId], references: [id])
+  productId         String   @default(uuid())
+  stripeSessionId   String   @unique
+  refundedAt        DateTime @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model userLessonCompleteTable {
+  userId   String @default(uuid())
+  lessonId String @default(uuid())
+  user     users  @relation(fields: [userId], references: [id])
+  lesson   lesson @relation(fields: [lessonId], references: [id])
+
+  @@id([userId, lessonId])
+}
