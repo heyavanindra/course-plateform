@@ -40,8 +40,8 @@ model users {
   email                   String
   name                    String
   role                    role                      @default(user)
-  imageUrl                String
-  deletedAt               DateTime                  @db.Timestamptz(3)
+  imageUrl                String?
+  deletedAt               DateTime?                 @db.Timestamptz(3)
   createdAt               DateTime                  @default(now()) @db.Timestamptz(3)
   updatedAt               DateTime                  @updatedAt @db.Timestamptz(3)
   userCourseAccess        userCourseAccess[]
